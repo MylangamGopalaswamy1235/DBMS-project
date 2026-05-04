@@ -1,46 +1,54 @@
-# Doctor Evaluation System — Vercel Deployment
+# Doctor Evaluation System — Vercel Deployment Guide
 
-## Steps to deploy
+## Step 1: Set up a free database (Neon — recommended)
 
-### 1. Set up a free PostgreSQL database
+1. Go to https://neon.tech and sign up for free
+2. Create a new project → copy the **Connection String**
+   (looks like: `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
+3. In the Neon dashboard, open the **SQL Editor**
+4. Paste and run the contents of `setup_db.sql` — this creates your tables and loads all 20 doctors
 
-Use [Neon](https://neon.tech) (recommended — free tier, works great with Vercel):
-1. Sign up at neon.tech
-2. Create a new project
-3. Copy the **connection string** (looks like `postgresql://user:pass@host/dbname?sslmode=require`)
-4. Open the SQL editor and paste + run the contents of `setup_db.sql`
+## Step 2: Deploy to Vercel
 
-### 2. Deploy to Vercel
+1. Go to https://vercel.com → Sign in
+2. Click **Add New Project** → **Upload** → drag this folder (or the zip)
+3. Before clicking Deploy, add this **Environment Variable**:
+   - **Name:** `DATABASE_URL`
+   - **Value:** your Neon connection string from Step 1
+4. Click **Deploy** — done!
 
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click **"Add New Project"** → **"Upload"** (or connect your GitHub)
-3. Upload this zip / drag the folder
-4. In **Environment Variables**, add:
-   - Name: `DATABASE_URL`
-   - Value: your Neon connection string from step 1
-5. Click **Deploy**
+## Step 3: Use the app
 
-### 3. Open your site
+- Visit your Vercel URL — you'll see the login page
+- **Admin login:** `admin` / `admin123`
+- **User login:** `user` / `user123`
 
-- Homepage (Login): `https://your-app.vercel.app/login.html`
-- Default credentials: `admin` / `admin123` or `user` / `user123`
+## Pages
 
-## File Structure
+| URL | Page |
+|-----|------|
+| `/` or `/login.html` | Login |
+| `/dashboard.html` | Doctor list |
+| `/feedback.html` | Submit feedback |
+| `/report.html?id=1` | Doctor report |
+
+## Project structure
 
 ```
 ├── api/
-│   ├── doctors.js          GET  /api/doctors
 │   ├── login.js            POST /api/login
+│   ├── doctors.js          GET  /api/doctors
 │   ├── feedback.js         POST /api/feedback
 │   └── reports/[id].js     GET  /api/reports/:id
 ├── public/
+│   ├── index.html          (login — served at /)
 │   ├── login.html
 │   ├── dashboard.html
 │   ├── feedback.html
 │   ├── report.html
 │   ├── style.css
 │   └── app.js
-├── setup_db.sql
+├── setup_db.sql            Run this on your database first
 ├── package.json
 └── vercel.json
 ```

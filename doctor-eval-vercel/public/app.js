@@ -2,10 +2,11 @@ const API_BASE = '/api';
 
 function initApp() {
     const token = localStorage.getItem('token');
-    const page = window.location.pathname.split('/').pop();
-    const publicPages = ['login.html', 'login', ''];
+    const page = window.location.pathname.replace(/\/$/, '').split('/').pop();
+    const publicPages = ['', 'index.html', 'login.html'];
     if (!token && !publicPages.includes(page)) {
         window.location.href = '/login.html';
+        return;
     }
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -25,6 +26,7 @@ if (loginForm) {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const errorEl = document.getElementById('loginError');
+        errorEl.classList.add('hidden');
         try {
             const res = await fetch(`${API_BASE}/login`, {
                 method: 'POST',
@@ -41,7 +43,7 @@ if (loginForm) {
                 errorEl.classList.remove('hidden');
             }
         } catch (err) {
-            errorEl.textContent = 'Server error. Please try again.';
+            errorEl.textContent = 'Could not reach the server. Please try again.';
             errorEl.classList.remove('hidden');
         }
     });
@@ -52,20 +54,19 @@ async function fetchDoctors() {
         const res = await fetch(`${API_BASE}/doctors`);
         const doctors = await res.json();
         const tbody = document.querySelector('#doctorsTable tbody');
-        if (tbody) {
-            tbody.innerHTML = '';
-            doctors.forEach(doc => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${doc.id}</td>
-                    <td><strong>${doc.name}</strong></td>
-                    <td>${doc.specialization}</td>
-                    <td>${doc.experience_years}</td>
-                    <td><a href="/report.html?id=${doc.id}" class="btn" style="padding:0.5rem 1rem;font-size:0.875rem;">View Report</a></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        doctors.forEach(doc => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${doc.id}</td>
+                <td><strong>${doc.name}</strong></td>
+                <td>${doc.specialization}</td>
+                <td>${doc.experience_years}</td>
+                <td><a href="/report.html?id=${doc.id}" class="btn" style="padding:0.5rem 1rem;font-size:0.875rem;">View Report</a></td>
+            `;
+            tbody.appendChild(tr);
+        });
     } catch (err) {
         console.error('Failed to fetch doctors', err);
     }
@@ -76,15 +77,14 @@ async function populateDoctorsSelect() {
         const res = await fetch(`${API_BASE}/doctors`);
         const doctors = await res.json();
         const select = document.getElementById('doctor_id');
-        if (select) {
-            select.innerHTML = '<option value="">-- Select a Doctor --</option>';
-            doctors.forEach(doc => {
-                const option = document.createElement('option');
-                option.value = doc.id;
-                option.textContent = `${doc.name} (${doc.specialization})`;
-                select.appendChild(option);
-            });
-        }
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Select a Doctor --</option>';
+        doctors.forEach(doc => {
+            const opt = document.createElement('option');
+            opt.value = doc.id;
+            opt.textContent = `${doc.name} (${doc.specialization})`;
+            select.appendChild(opt);
+        });
     } catch (err) {
         console.error('Failed to load doctors', err);
     }
@@ -109,14 +109,10 @@ if (feedbackForm) {
                 body: JSON.stringify(data)
             });
             const result = await res.json();
-            if (res.ok) {
-                alert('Feedback submitted successfully!');
-                feedbackForm.reset();
-            } else {
-                alert(`Error: ${result.error}`);
-            }
+            if (res.ok) { alert('Feedback submitted successfully!'); feedbackForm.reset(); }
+            else alert('Error: ' + result.error);
         } catch (err) {
-            alert('Server error while submitting feedback.');
+            alert('Server error. Please try again.');
         }
     });
 }
@@ -125,30 +121,29 @@ async function fetchReport(doctorId) {
     try {
         const res = await fetch(`${API_BASE}/reports/${doctorId}`);
         const data = await res.json();
-        if (res.ok) {
-            document.getElementById('doctorNameTitle').textContent = `Performance Report: ${data.doctor.name}`;
-            document.getElementById('totalReview').textContent = data.stats.total_feedback;
-            document.getElementById('avgRating').textContent = `${data.stats.average_rating} / 5`;
-            const tbody = document.querySelector('#feedbackTable tbody');
-            tbody.innerHTML = '';
-            const ratingCounts = {1:0,2:0,3:0,4:0,5:0};
-            data.feedbacks.forEach(f => {
-                ratingCounts[f.rating] = (ratingCounts[f.rating] || 0) + 1;
-                const tr = document.createElement('tr');
-                const dateStr = f.created_at ? new Date(f.created_at).toLocaleDateString() : '-';
-                tr.innerHTML = `
-                    <td>${f.patient_name}</td>
-                    <td>${'⭐'.repeat(f.rating)}</td>
-                    <td>${f.treatment_result || '-'}</td>
-                    <td>${f.comments || '-'}</td>
-                    <td>${dateStr}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            renderChart(ratingCounts);
-        } else {
-            alert(data.error || 'Failed to fetch report');
-        }
+        if (!res.ok) { alert(data.error || 'Failed to fetch report'); return; }
+
+        document.getElementById('doctorNameTitle').textContent = `Performance Report: ${data.doctor.name}`;
+        document.getElementById('totalReview').textContent = data.stats.total_feedback;
+        document.getElementById('avgRating').textContent = `${data.stats.average_rating} / 5`;
+
+        const tbody = document.querySelector('#feedbackTable tbody');
+        tbody.innerHTML = '';
+        const ratingCounts = {1:0,2:0,3:0,4:0,5:0};
+        data.feedbacks.forEach(f => {
+            ratingCounts[f.rating] = (ratingCounts[f.rating] || 0) + 1;
+            const tr = document.createElement('tr');
+            const dateStr = f.created_at ? new Date(f.created_at).toLocaleDateString() : '-';
+            tr.innerHTML = `
+                <td>${f.patient_name}</td>
+                <td>${'⭐'.repeat(f.rating)}</td>
+                <td>${f.treatment_result || '-'}</td>
+                <td>${f.comments || '-'}</td>
+                <td>${dateStr}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        renderChart(ratingCounts);
     } catch (err) {
         console.error('Error fetching report', err);
     }
@@ -163,12 +158,7 @@ function renderChart(ratingCounts) {
         type: 'bar',
         data: {
             labels: ['1 Star','2 Stars','3 Stars','4 Stars','5 Stars'],
-            datasets: [{
-                label: 'Number of Ratings',
-                data: [ratingCounts[1],ratingCounts[2],ratingCounts[3],ratingCounts[4],ratingCounts[5]],
-                backgroundColor: ['#ef4444','#f97316','#eab308','#84cc16','#10b981'],
-                borderWidth: 1
-            }]
+            datasets: [{ label: 'Number of Ratings', data: [ratingCounts[1],ratingCounts[2],ratingCounts[3],ratingCounts[4],ratingCounts[5]], backgroundColor: ['#ef4444','#f97316','#eab308','#84cc16','#10b981'], borderWidth: 1 }]
         },
         options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
     });

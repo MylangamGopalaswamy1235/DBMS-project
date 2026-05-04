@@ -1,5 +1,5 @@
--- Run this SQL on your PostgreSQL database (e.g. Neon, Supabase, Railway)
--- before deploying to Vercel.
+-- Run this on your PostgreSQL database (Neon / Supabase / Railway)
+-- BEFORE deploying to Vercel.
 
 CREATE TABLE IF NOT EXISTS doctors (
   id SERIAL PRIMARY KEY,

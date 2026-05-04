@@ -6,12 +6,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { username, password } = req.body || {};
-
-  if (username === 'admin' && password === 'admin123') {
-    return res.status(200).json({ token: 'fake-jwt-token-admin', role: 'admin', name: 'Administrator' });
-  } else if (username === 'user' && password === 'user123') {
-    return res.status(200).json({ token: 'fake-jwt-token-user', role: 'user', name: 'Regular User' });
-  }
-
+  if (username === 'admin' && password === 'admin123')
+    return res.json({ token: 'fake-jwt-token-admin', role: 'admin', name: 'Administrator' });
+  if (username === 'user' && password === 'user123')
+    return res.json({ token: 'fake-jwt-token-user', role: 'user', name: 'Regular User' });
   return res.status(401).json({ error: 'Invalid credentials' });
 };
