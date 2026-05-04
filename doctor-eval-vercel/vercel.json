@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/feedback",  "destination": "/feedback.html"  },
+    { "source": "/report",    "destination": "/report.html"    }
+  ]
+}
